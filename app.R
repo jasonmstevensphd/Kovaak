@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 
 # Import Libraries and Files ----------------------------------------------
 
@@ -8,7 +8,7 @@ library(zoo)
 library(shiny)
 
 df <- read_csv("Kovaak - Sheet1.csv")
-# Sync with github
+# Sync with github, did it work?
 
 
 # Setup Lists for Downstream Filtration -----------------------------------
