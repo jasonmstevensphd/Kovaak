@@ -118,7 +118,7 @@ server <- function(input, output) {
 # Run the Application -----------------------------------------------------
 
 shinyApp(ui = ui, server = server)
-=======
+
 
 # Import Libraries and Files ----------------------------------------------
 
@@ -238,4 +238,3 @@ server <- function(input, output) {
 # Run the Application -----------------------------------------------------
 
 shinyApp(ui = ui, server = server)
->>>>>>> 385c8de099ba7a69fe8abb1c6f67e0d162e51ae4
