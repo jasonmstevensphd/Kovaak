@@ -6,6 +6,8 @@
 library(tidyverse)
 library(zoo)
 library(shiny)
+library(shinydashboard)
+library(plotly)
 
 df <- read_csv("Kovaak - Sheet1.csv")
 # Sync with github, did it work?
@@ -21,31 +23,55 @@ challenges <- df$Challenge
 summary <- df %>% group_by(Challenge) %>% summarize(counts = n())
 
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-
 # UI ----------------------------------------------------------------------
 
 
+ui <- dashboardPage(
+
     # Application title
-    titlePanel("Jay's Kovaak Data"),
+    dashboardHeader(title = "Jay's Kovaak Data"),
+    dashboardSidebar(
+      sidebarMenu(
+        menuItem("Challenge selection", tabName = "Selection", icon = icon("th")), # End menuItem
+        menuItem("Progress over time", tabName = "DateProgress", icon = icon("th")), # End menuItem
+        menuItem("Moving average", tabName = "MovingAverage", icon = icon("th")), # End menuItem
+        menuItem("Score Distribution", tabName = "Distribution", icon = icon("th")) # End menuItem
+      ) # End sidebarMenu
+    ), # End dashboardSidebar
+    dashboardBody(
+      tabItems(
+        tabItem(tabName = "Selection",
+                        h2("Select your Kovaak challenge"),
+                        fluidRow(
+                          box("Selection",
+                              selectizeInput("Selection",
+                                             label = "Select from the list of challenges",
+                                             choices = challenges) # End SelectizeInput
+                              ) # End box
+                          ) # End fluidRow
+                        ), # End tabItem
+        tabItem(tabName = "DateProgress",
+                        h2("Improvement over time"),
+                        box("DateProgress",
+                            plotlyOutput("Progress") # End SelectizeInput
+                            ) # End box
+                      ), # End tabItem
+        tabItem(tabName = "MovingAverage",
+                        h2("Smoothed average of scores"),
+                        box("Moving Average",
+                            plotlyOutput("MovingAverage") # End SelectizeInput
+                            ) # End box
+                        ), # End tabItem
+        tabItem(tabName = "Distribution",
+                        h2("Distribution of scores"),
+                        box("Distribution",
+                            plotlyOutput("Distribution") # End SelectizeInput
+                            ) # End box
+                        ) # End tabItem
+            ) # End tabItems
+      ) # End dashboardBody
 
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            selectizeInput("Challenge",
-                        "Select a Challenge:",
-                        choices = challenges)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("Progress"),
-           plotOutput("Distribution"),
-           plotOutput("MovingAverage")
-        )
-    )
-)
+) # End dashboardPage
 
 
 # Server ------------------------------------------------------------------
@@ -61,7 +87,7 @@ server <- function(input, output) {
 
     df_R <- reactive({
       
-      df <- df %>% filter(Challenge == input$Challenge)
+      df <- df %>% filter(Challenge == input$Selection)
       return(df)
         
     })
@@ -73,7 +99,7 @@ server <- function(input, output) {
     
     df_MovingAverage <- reactive({
       
-      MovAvg <- df %>% filter(Challenge == input$Challenge)
+      MovAvg <- df %>% filter(Challenge == input$Selection)
       
       MovAvg$Average <- rollmean(MovAvg$Score, 5, fill = NA)
       
@@ -86,28 +112,40 @@ server <- function(input, output) {
 
 # Outputs -----------------------------------------------------------------
 
-    output$Progress <- renderPlot({
+    output$Progress <- renderPlotly({
         
         df <- df_R()
         
-        ggplot(df, aes(x = Date, y = Score)) +
+        Plot <- ggplot(df, aes(x = Date, y = Score)) +
             geom_point()
+        
+        Plot <- ggplotly(Plot)
+        
+        Plot
 
     })
     
-    output$Distribution <- renderPlot({
+    output$Distribution <- renderPlotly({
         
         df <- df_R()
         
-        ggplot(df, aes(x = Score)) +
+        Plot <- ggplot(df, aes(x = Score)) +
             geom_density()
+        
+        Plot <- ggplotly(Plot)
+        
+        Plot
         
     })
     
-    output$MovingAverage <- renderPlot({
+    output$MovingAverage <- renderPlotly({
       
-      ggplot(df_MovingAverage(), aes(x = Entry, y = Average)) +
+      Plot <- ggplot(df_MovingAverage(), aes(x = Entry, y = Average)) +
         geom_point()
+      
+      Plot <- ggplotly(Plot)
+      
+      Plot
       
     })  
     
@@ -119,122 +157,4 @@ server <- function(input, output) {
 
 shinyApp(ui = ui, server = server)
 
-
-# Import Libraries and Files ----------------------------------------------
-
-
-library(tidyverse)
-library(zoo)
-library(shiny)
-
-df <- read_csv("Kovaak - Sheet1.csv")
-
-
-
-# Setup Lists for Downstream Filtration -----------------------------------
-
-challenges <- df$Challenge
-
-
-# Column Mutations --------------------------------------------------------
-
-summary <- df %>% group_by(Challenge) %>% summarize(counts = n())
-
-
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-
-# UI ----------------------------------------------------------------------
-
-
-    # Application title
-    titlePanel("Jay's Kovaak Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            selectizeInput("Challenge",
-                        "Select a Challenge:",
-                        choices = challenges)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("Progress"),
-           plotOutput("Distribution"),
-           plotOutput("MovingAverage")
-        )
-    )
-)
-
-
-# Server ------------------------------------------------------------------
-
-
-server <- function(input, output) {
-
-
-# Reactive Functions ------------------------------------------------------
-
-
-  # Input$Challenge ---------------------------------------------------------
-
-    df_R <- reactive({
-      
-      df <- df %>% filter(Challenge == input$Challenge)
-      return(df)
-        
-    })
-    
-    
-  # Moving Average Plot -----------------------------------------------------
-    
-    # Set up the Math
-    
-    df_MovingAverage <- reactive({
-      
-      MovAvg <- df %>% filter(Challenge == input$Challenge)
-      
-      MovAvg$Average <- rollmean(MovAvg$Score, 5, fill = NA)
-      
-      MovAvg$Entry <- c(1:nrow(MovAvg))
-      
-      return(MovAvg)
-      
-    })
-        
-
-# Outputs -----------------------------------------------------------------
-
-    output$Progress <- renderPlot({
-        
-        df <- df_R()
-        
-        ggplot(df, aes(x = Date, y = Score)) +
-            geom_point()
-
-    })
-    
-    output$Distribution <- renderPlot({
-        
-        df <- df_R()
-        
-        ggplot(df, aes(x = Score)) +
-            geom_density()
-        
-    })
-    
-    output$MovingAverage <- renderPlot({
-      
-      ggplot(df_MovingAverage(), aes(x = Entry, y = Average)) +
-        geom_point()
-      
-    })  
-    
-    
-    
-}
-
-# Run the Application -----------------------------------------------------
-
-shinyApp(ui = ui, server = server)
+# End of script
