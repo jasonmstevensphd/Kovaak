@@ -10,18 +10,14 @@ library(shinydashboard)
 library(plotly)
 
 df <- read_csv("Kovaak - Sheet1.csv")
-# Sync with github, did it work?
 
-
-# Setup Lists for Downstream Filtration -----------------------------------
-
-challenges <- df$Challenge
-
-
+colnames(df) <- c("Date", "Challenge", "Score", "Notes")
 # Column Mutations --------------------------------------------------------
 
-summary <- df %>% group_by(Challenge) %>% summarize(counts = n())
+summary <- df %>% group_by(Challenge) %>% summarize(counts = n()) %>%
+  arrange(desc(counts))
 
+challenges <- summary$Challenge
 
 # UI ----------------------------------------------------------------------
 
